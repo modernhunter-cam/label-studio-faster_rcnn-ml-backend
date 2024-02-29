@@ -102,7 +102,8 @@ def webhook():
 def health():
     return jsonify({
         'status': 'UP',
-        'model_class': MODEL_CLASS.__name__
+        'model_class': MODEL_CLASS.__name__,
+        'best_backend': 'label_studio_ml',
     })
 
 
