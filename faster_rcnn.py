@@ -44,22 +44,28 @@ class TFFasterRCNN(LabelStudioMLBase):
 
         predictions = self.model.predict(image[np.newaxis, ...])
         filtered_predictions = self.filter_predictions(predictions)
-
-        return [{
-            'result': [{
+        results = []
+        all_scores = []
+        for bbox, class_idx, score in filtered_predictions:
+            results.append({
                 'from_name': self.from_name,
                 'to_name': self.to_name,
                 'type': 'rectanglelabels',
                 'value': {
-                    'rectanglelabels': [{
+                    'rectanglelabels': {
                         'x': bbox[0],
                         'y': bbox[1],
                         'width': bbox[2] - bbox[0],
                         'height': bbox[3] - bbox[1],
                         'label': self.labels_in_config[class_idx]
-                    } for bbox, class_idx in filtered_predictions]
+                    }
                 }
-            }]
+            })
+            all_scores.append(score)
+        avg_score = sum(all_scores) / max(len(all_scores), 1)
+        return [{
+            'result': results,
+            'score': avg_score
         }]
 
     def filter_predictions(self, predictions):
@@ -96,7 +102,7 @@ class TFFasterRCNN(LabelStudioMLBase):
         def prepare_item(item):
             img = tf.io.read_file(item[0])
             img = tf.image.decode_jpeg(img, channels=3)
-            img = tf.image.resize(img, [224, 224])
+            img = tf.image.resize(img, [self.image_height, self.image_width])
             return img, item[1], item[2]
 
         ds = ds.map(prepare_item, num_parallel_calls=tf.data.AUTOTUNE)
@@ -107,8 +113,8 @@ class TFFasterRCNN(LabelStudioMLBase):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['acc'])
         self.model.fit(ds, epochs=self.epochs)
-        model_file = os.path.join(workdir, 'checkpoint')
-        self.model.save_weights(model_file)
+        model_file = os.path.join(workdir, 'model')  # Changed 'checkpoint' to 'model'
+        self.model.save(model_file)  # Save entire model instead of just weights
         return {'model_file': model_file}
 
 
