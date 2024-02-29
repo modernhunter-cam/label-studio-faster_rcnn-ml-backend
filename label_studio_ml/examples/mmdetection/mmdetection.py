@@ -95,12 +95,14 @@ class MMDetection(LabelStudioMLBase):
         task = tasks[0]
         
         image_url = self._get_image_url(task)
+        print('Image url:', image_url)
         image_path = self.get_local_path(image_url)
-        
+        print('Image path:', image_path)
         model_results = inference_detector(self.model, image_path)
         results = []
         all_scores = []
         img_width, img_height = get_image_size(image_path)
+        print('Image size:', img_width, img_height)
         for bboxes, label in zip(model_results, self.model.CLASSES):
             output_label = self.label_map.get(label, label)
 
