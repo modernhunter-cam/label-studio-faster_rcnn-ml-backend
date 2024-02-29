@@ -1,17 +1,6 @@
 {
     "cSpell.words": [
-        "AUTOTUNE",
-        "Crossentropy",
-        "gunicorn",
-        "isfloat",
-        "itsdangerous",
-        "keras",
-        "levelname",
-        "rcnn",
-        "RCNN",
-        "rectanglelabels",
-        "redis",
-        "tensorflow",
-        "workdir"
+        "Heartex",
+        "levelname"
     ]
 }
