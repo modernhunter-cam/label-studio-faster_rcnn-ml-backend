@@ -26,5 +26,6 @@ EXPOSE 9090
 
 ENV checkpoint_file=faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth
 ENV config_file=faster_rcnn_r50_fpn_1x_coco.py
+ENV device=gpu:0
 
 CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
