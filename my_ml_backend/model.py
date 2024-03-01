@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class NewModel(LabelStudioMLBase):
 
-    def __init__(self, module_url='https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1', **kwargs):
+    def __init__(self, module_url='https://www.kaggle.com/models/google/faster-rcnn-inception-resnet-v2/frameworks/TensorFlow1/variations/faster-rcnn-openimages-v4-inception-resnet-v2/versions/1', **kwargs):
         super().__init__(**kwargs)
         print('Loading module:', module_url)
         self.module = hub.load(module_url)
