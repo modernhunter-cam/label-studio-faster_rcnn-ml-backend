@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
 
-from pillow import Image
+from PIL import Image
 from label_studio_ml.model import LabelStudioMLBase
 
 logger = logging.getLogger(__name__)
