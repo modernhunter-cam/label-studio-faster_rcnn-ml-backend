@@ -14,18 +14,18 @@ feature_extractor_model = 'https://tfhub.dev/google/tf2-preview/mobilenet_v2/fea
 
 class TFMobileNet(LabelStudioMLBase):
 
-    def __init__(self, trainable=False, batch_size=32, epochs=3, **kwargs):
+    def __init__(self, **kwargs):
         super(TFMobileNet, self).__init__(**kwargs)
-
+        print('TFMobileNet.__init__')
         self.image_width, self.image_height = 224, 224
-        self.trainable = trainable
-        self.batch_size = batch_size
-        self.epochs = epochs
+        self.trainable = False
+        self.batch_size = 32
+        self.epochs = 3
 
         self.feature_extractor_layer = hub.KerasLayer(
             feature_extractor_model,
             input_shape=(self.image_width, self.image_height, 3),
-            trainable=trainable)
+            trainable=False)
 
         self.from_name, self.to_name, self.value, self.labels_in_config = get_single_tag_keys(
             self.parsed_label_config, 'Choices', 'Image')
