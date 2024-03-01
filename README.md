@@ -28,7 +28,7 @@ docker compose up
 
 docker ps
 
-docker logs -f f5393363924b
+docker logs -f e0fc98911412
 
 ## Quickstart
 
