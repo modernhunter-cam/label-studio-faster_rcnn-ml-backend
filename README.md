@@ -12,6 +12,23 @@ There are several use-cases for the ML backend:
 
 If you just need to load static pre-annotated data into Label Studio, running an ML backend might be overkill for you. Instead, you can [import preannotated data](https://labelstud.io/guide/predictions.html).
 
+ssh root@128.140.111.34
+
+ntLUEEnhA4EJE4WmXcRh
+
+my_ml_backend
+
+cd /var/opt/models/label-studio-faster_rcnn-ml-backend/label_studio_ml/examples/mmdetection
+
+docker compose down
+
+git pull
+
+docker compose up
+
+docker ps
+
+docker logs -f f5393363924b
 
 ## Quickstart
 
