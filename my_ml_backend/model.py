@@ -15,7 +15,7 @@ class NewModel(LabelStudioMLBase):
 
     def __init__(self, **kwargs):
         super(NewModel, self).__init__(**kwargs)
-
+        print('NewModel.__init__')
         self.image_width, self.image_height = 224, 224
         self.trainable = False
         self.batch_size = 32
