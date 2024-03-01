@@ -20,10 +20,12 @@ my_ml_backend
 
 cd /var/opt/models/label-studio-faster_rcnn-ml-backend/label_studio_ml/examples/mmdetection
 
-docker system prune -a
+
 
 
 docker compose down
+
+docker system prune -a
 
 git pull
 

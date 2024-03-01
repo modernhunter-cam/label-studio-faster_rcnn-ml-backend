@@ -13,8 +13,8 @@ feature_extractor_model = 'https://tfhub.dev/google/tf2-preview/mobilenet_v2/fea
 
 class NewModel(LabelStudioMLBase):
 
-    def __init__(self, **kwargs):
-        super(NewModel, self).__init__(**kwargs)
+    def __init__(self):
+        super(NewModel, self).__init__()
         print('NewModel.__init__')
         self.image_width, self.image_height = 224, 224
         self.trainable = False
