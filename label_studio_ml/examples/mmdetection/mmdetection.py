@@ -91,13 +91,16 @@ class MMDetection(LabelStudioMLBase):
         return image_url
 
     def predict(self, tasks, **kwargs):
+        print('Predicting tasks:')
         assert len(tasks) == 1
         task = tasks[0]
         
         image_url = self._get_image_url(task)
         print('Image url:', image_url)
-        image_path = self.get_local_path(image_url)
+        # image_path = self.get_local_path(image_url)
+        image_path = 'https://studio.mhcam-cloud.com' + image_url
         print('Image path:', image_path)
+
         model_results = inference_detector(self.model, image_path)
         results = []
         all_scores = []

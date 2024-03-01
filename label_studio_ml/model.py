@@ -113,7 +113,7 @@ class LabelStudioMLBase(ABC):
             return _update_fn(event, data, helper=self, **additional_params)
 
     def get_local_path(self, url, project_dir=None):
-        return get_local_path(url, project_dir=project_dir, hostname='https://studio.mhcam.cloud', access_token=self.access_token)
+        return get_local_path(url, project_dir=project_dir, hostname=self.hostname, access_token=self.access_token)
 
     def get_first_tag_occurence(
         self,
