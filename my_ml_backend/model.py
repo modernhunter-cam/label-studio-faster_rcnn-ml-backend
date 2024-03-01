@@ -13,8 +13,8 @@ feature_extractor_model = 'https://tfhub.dev/google/tf2-preview/mobilenet_v2/fea
 
 class NewModel(LabelStudioMLBase):
 
-    def __init__(self):
-        super(NewModel, self).__init__()
+    def __init__(self, **kwargs):
+        super(NewModel, self).__init__(**kwargs)
         print('NewModel.__init__')
         self.image_width, self.image_height = 224, 224
         self.trainable = False
@@ -34,11 +34,6 @@ class NewModel(LabelStudioMLBase):
             tf.keras.layers.Dense(num_classes)
         ])
         self.model.summary()
-        if self.train_output:
-            model_file = self.train_output['model_file']
-            logger.info('Restore model from ' + model_file)
-            # Restore previously saved weights
-            self.model.load_weights(self.train_output['model_file'])
 
     def predict(self, tasks, **kwargs):
         image_path = get_image_local_path(tasks[0]['data'][self.value])
