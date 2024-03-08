@@ -68,6 +68,7 @@ def _setup():
     data = request.json
     project_id = data.get('project').split('.', 1)[0]
     label_config = data.get('schema')
+    print('_setup')
     model = MODEL_CLASS(project_id)
     model.use_label_config(label_config)
     model_version = model.get('model_version')

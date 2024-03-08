@@ -4,7 +4,10 @@ import boto3
 import io
 import json
 
-
+import numpy as np
+import requests
+from PIL import Image
+from io import BytesIO
 from mmdet.apis import init_detector, inference_detector
 
 from label_studio_ml.model import LabelStudioMLBase
@@ -94,14 +97,23 @@ class MMDetection(LabelStudioMLBase):
         print('Predicting tasks:')
         assert len(tasks) == 1
         task = tasks[0]
-        
-        image_url = self._get_image_url(task)
+
+        image_url = task['data'].get(self.value) or task['data'].get(DATA_UNDEFINED_NAME)
         print('Image url:', image_url)
         # image_path = self.get_local_path(image_url)
-        image_path = 'https://studio.mhcam-cloud.com' + image_url
+        image_path = 'https://studio.mhcam.cloud' + image_url
         print('Image path:', image_path)
+        url = 'https://media.istockphoto.com/id/655648640/photo/happy-couple-on-the-beach-full-of-people.jpg?s=612x612&w=0&k=20&c=O7uvQpg0EtcHmXfhErJR5CO8GhHvK5BikxufFt_3XSw='
 
-        model_results = inference_detector(self.model, image_path)
+        # Download the image
+        response = requests.get(url)
+        image_bytes = BytesIO(response.content)
+
+        # Open the image using PIL
+        image = Image.open(image_bytes)
+
+        image.save('test.jpg')
+        model_results = inference_detector(self.model, 'test.jpg')
         results = []
         all_scores = []
         img_width, img_height = get_image_size(image_path)
@@ -111,7 +123,7 @@ class MMDetection(LabelStudioMLBase):
 
             if output_label not in self.labels_in_config:
                 print(output_label + ' label not found in project config.')
-                continue
+                output_label = 'unknown'
             for bbox in bboxes:
                 bbox = list(bbox)
                 if not bbox:

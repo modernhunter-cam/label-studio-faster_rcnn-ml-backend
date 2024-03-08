@@ -11,6 +11,7 @@ from label_studio_ml.utils import get_image_local_path, get_single_tag_keys, get
 logger = logging.getLogger(__name__)
 feature_extractor_model = 'https://tfhub.dev/google/tf2-preview/mobilenet_v2/feature_vector/4'
 
+
 class NewModel(LabelStudioMLBase):
 
     def __init__(self, **kwargs):
@@ -26,7 +27,9 @@ class NewModel(LabelStudioMLBase):
             input_shape=(self.image_width, self.image_height, 3),
             trainable=False)
 
-        self.from_name, self.to_name, self.value, self.labels_in_config = get_single_tag_keys(self.parsed_label_config, 'RectangleLabels', 'Image')
+        self.from_name, self.to_name, self.value, self.labels_in_config = get_single_tag_keys(self.parsed_label_config,
+                                                                                              'RectangleLabels',
+                                                                                              'Image')
         self.labels = tf.convert_to_tensor(sorted(self.labels_in_config))
         num_classes = len(self.labels_in_config)
         self.model = tf.keras.Sequential([
