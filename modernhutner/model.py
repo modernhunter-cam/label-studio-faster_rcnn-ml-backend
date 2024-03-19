@@ -50,10 +50,10 @@ class NewModel(LabelStudioMLBase):
                 'value': {
                     'rotation': 0,  # Adjust if needed
                     'rectanglelabels': [output_label],
-                    'x': x * 100,
-                    'y': y * 100,
-                    'width': xmax * 100,
-                    'height': ymax * 100
+                    'x': x,
+                    'y': y,
+                    'width': xmax,
+                    'height': ymax
                 },
                 'score': score
             })
