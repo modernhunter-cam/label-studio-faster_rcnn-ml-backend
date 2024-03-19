@@ -22,6 +22,9 @@ class NewModel(LabelStudioMLBase):
     def predict(self, tasks, context=None, **kwargs):
         task = tasks[0]
         image_url = 'https://studio.mhcam.cloud' + task['data']['image']
+        img_width, img_height = Image.open(BytesIO(requests.get(image_url, headers={
+          'Authorization': 'Token 85e68543b8741a1b6b21aaf449ef3a009f215897'
+        }).content)).size
         body = {'img': image_url}
         print(f'predict My Class {body}')
         data = requests.post('https://seahorse.mhcam.cloud/detector', json=body)
