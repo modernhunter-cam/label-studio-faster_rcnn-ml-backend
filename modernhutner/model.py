@@ -22,9 +22,6 @@ class NewModel(LabelStudioMLBase):
     def predict(self, tasks, context=None, **kwargs):
         task = tasks[0]
         image_url = 'https://studio.mhcam.cloud' + task['data']['image']
-        img_width, img_height = Image.open(BytesIO(requests.get(image_url, headers={
-          'Authorization': 'Token 85e68543b8741a1b6b21aaf449ef3a009f215897'
-        }).content)).size
         body = {'img': image_url}
         print(f'predict My Class {body}')
         data = requests.post('https://seahorse.mhcam.cloud/detector', json=body)
@@ -34,7 +31,7 @@ class NewModel(LabelStudioMLBase):
         results = []
         all_scores = []
         for item in result:
-            bbox = item["bbox"]
+            bbox = item["bboxPercent"]
             output_label = item["class"]
 
             x, y, xmax, ymax = bbox[:4]
@@ -50,10 +47,10 @@ class NewModel(LabelStudioMLBase):
                 'value': {
                     'rotation': 0,  # Adjust if needed
                     'rectanglelabels': [output_label],
-                    'x': x / img_width * 100,
-                    'y': y / img_height * 100,
-                    'width': xmax / img_width * 100,
-                    'height': ymax / img_height * 100
+                    'x': x * 100,
+                    'y': y * 100,
+                    'width': xmax * 100,
+                    'height': ymax * 100
                 },
                 'score': score
             })
