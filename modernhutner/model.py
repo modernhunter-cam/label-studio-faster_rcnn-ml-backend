@@ -33,14 +33,9 @@ class NewModel(LabelStudioMLBase):
         print(f'predict My Class {data.json()}')
         results = []
         all_scores = []
-        labels_in_config = {}
         for item in result:
             bbox = item["bbox"]
             output_label = item["class"]
-
-            if output_label not in labels_in_config:
-                print(output_label + ' label not found in project config.')
-                output_label = 'unknown'
 
             x, y, xmax, ymax = bbox[:4]
             score = item["score"]
@@ -54,7 +49,7 @@ class NewModel(LabelStudioMLBase):
                 'image_rotation': 0,
                 'value': {
                     'rotation': 0,  # Adjust if needed
-                    'rectanglelabels': ['unknown'],
+                    'rectanglelabels': [output_label],
                     'x': x / img_width * 100,
                     'y': y / img_height * 100,
                     'width': xmax / img_width * 100,
