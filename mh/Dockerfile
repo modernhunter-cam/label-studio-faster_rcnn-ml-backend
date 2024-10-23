@@ -2,7 +2,9 @@ FROM python:3.8-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git
+    apt-get install -y git curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=True \
     PORT=9090 \
