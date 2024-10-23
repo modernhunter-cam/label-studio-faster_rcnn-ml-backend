@@ -28,7 +28,7 @@ services:
       ANY: PARAMETER
     
     # Port mapping
-    ports:
-      - '9090:9090'
+    # ports:
+    #   - '9090:9090'
     
     restart: unless-stopped  # This matches the Chatwoot config's restart policy
