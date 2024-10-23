@@ -12,7 +12,7 @@ class NewModel(LabelStudioMLBase):
         logger.info('Initializing NewModel')
         self.label_studio_auth = 'Token bd09a8fe874cfaf2e7a884dca7cf431fac06e6e4'
         self.label_studio_base_url = 'https://labelstudio.server01.mhcam.app'
-        self.ml_server_url = 'https://ml.server01.mhcam.app/detector'
+        self.ml_server_url = 'https://ml.server01.mhcam.app/detector/upload/6'
 
     def _get_image_file(self, image_url):
         """Download image and return both file data and dimensions"""
@@ -32,7 +32,6 @@ class NewModel(LabelStudioMLBase):
     def _make_ml_request(self, image_data):
         """Make request to ML server with image file"""
         try:
-            # Create multipart form data with image file
             files = {
                 'file': ('image.jpg', image_data, 'image/jpeg')
             }
@@ -48,8 +47,14 @@ class NewModel(LabelStudioMLBase):
             logger.debug(f'ML server headers: {dict(response.headers)}')
             logger.debug(f'ML server response: {response.text}')
             
-            if response.status_code != 200:
+            # Accept both 200 and 201 status codes
+            if response.status_code not in [200, 201]:
                 logger.error(f'ML server error: {response.text}')
+                return None
+                
+            # Check if response is error message
+            if response.text.strip() == "Error occurred during prediction":
+                logger.error('ML server reported prediction error')
                 return None
                 
             try:
@@ -65,7 +70,6 @@ class NewModel(LabelStudioMLBase):
     def predict(self, tasks, context=None, **kwargs):
         """Make predictions for the given tasks"""
         try:
-            # Input validation
             if not tasks:
                 return [{"results": []}]
 
@@ -75,13 +79,11 @@ class NewModel(LabelStudioMLBase):
                 logger.error('No image path in task data')
                 return [{"results": []}]
                 
-            # Get image file and dimensions
             image_url = f'{self.label_studio_base_url}{image_path}'
             logger.info(f'Processing image: {image_url}')
             
             image_data, (img_width, img_height) = self._get_image_file(image_url)
             
-            # Make prediction request with image file
             detection_result = self._make_ml_request(image_data)
             if not detection_result:
                 return [{"results": []}]
@@ -92,11 +94,12 @@ class NewModel(LabelStudioMLBase):
             
             for item in detection_result:
                 try:
-                    bbox = item.get("bboxPercent", [])
-                    if len(bbox) < 4:
+                    # Use bboxPercent values directly
+                    bbox_percent = item.get("bboxPercent", [])
+                    if len(bbox_percent) < 4:
                         continue
                         
-                    x, y, xmax, ymax = bbox[:4]
+                    x, y, width, height = bbox_percent
                     score = item.get("score", 0)
                     output_label = item.get("class", "unknown")
                     
@@ -112,13 +115,13 @@ class NewModel(LabelStudioMLBase):
                             'rectanglelabels': [output_label],
                             'x': x,
                             'y': y,
-                            'width': xmax,
-                            'height': ymax
+                            'width': width - x,  # Convert to width
+                            'height': height - y  # Convert to height
                         },
-                        'score': score
+                        'score': score / 100  # Convert score to 0-1 range
                     }
                     results.append(result)
-                    all_scores.append(score)
+                    all_scores.append(score / 100)
                 except Exception as e:
                     logger.error(f'Error processing detection item: {str(e)}')
                     continue
