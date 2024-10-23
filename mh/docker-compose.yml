@@ -1,38 +1,33 @@
+version: "3.8"
 services:
-  deploy:
-    - name: label-studio-ml-backend
+  ml-backend:
+    container_name: ml-backend
+    build: 
+      context: .
       dockerfile: Dockerfile
-      ports:
-        - target: 9090
-          published: 9090
-          protocol: tcp
-      environment:
-        - name: MODEL_DIR
-          value: /data/models
-        - name: WORKERS
-          value: "2"
-        - name: THREADS
-          value: "4"
-        - name: LOG_LEVEL
-          value: DEBUG
-        - name: ANY
-          value: PARAMETER
-      healthcheck:
-        test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:9090/health"]
-        interval: 5s
-        timeout: 20s
-        retries: 10
-      volumes:
-        - source: label_studio_models
-          target: /data/models
-          type: volume
+    image: ml-backend:latest
+    environment:
+      - MODEL_DIR=/data/models
+      - WORKERS=2
+      - THREADS=4
+      - LOG_LEVEL=DEBUG
+      - ANY=PARAMETER
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:9090/health"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+    volumes:
+      - label_studio_models:/data/models
+    deploy:
       resources:
         limits:
           memory: 2G
         reservations:
           memory: 512M
-      restart_policy:
-        condition: unless-stopped
+    restart: unless-stopped
 
 volumes:
   label_studio_models:
