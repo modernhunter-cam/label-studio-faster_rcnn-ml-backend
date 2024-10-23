@@ -99,7 +99,7 @@ class NewModel(LabelStudioMLBase):
                     if len(bbox_percent) < 4:
                         continue
                         
-                    x, y, width, height = bbox_percent
+                    x, y, xmax, ymax = bbox_percent
                     score = item.get("score", 0)
                     output_label = item.get("class", "unknown")
                     
