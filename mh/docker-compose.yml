@@ -3,20 +3,32 @@ version: "3.8"
 services:
   ml-backend:
     container_name: ml-backend
-    image: humansignal/ml-backend:v0
+    image: 'humansignal/ml-backend:v0'
+    build: .
+    
+    # Updated health check configuration using wget instead of curl
+    # This is more likely to be available in the container by default
     healthcheck:
       test:
-        - CMD-SHELL
-        - 'curl -f http://localhost:9090/health || exit 1'
+        - CMD
+        - wget
+        - '--spider'
+        - '-q'
+        - 'http://127.0.0.1:9090/health'
       interval: 5s
       timeout: 20s
-      retries: 3
-    build: .
+      retries: 10  # Increased retries like in the Chatwoot example
+    
+    # Environment variables
     environment:
-      - MODEL_DIR=/data/models
-      - WORKERS=2
-      - THREADS=4
-      - LOG_LEVEL=DEBUG
-      - ANY=PARAMETER
+      MODEL_DIR: /data/models
+      WORKERS: '2'
+      THREADS: '4'
+      LOG_LEVEL: DEBUG
+      ANY: PARAMETER
+    
+    # Port mapping
     ports:
-      - "9090:9090"
+      - '9090:9090'
+    
+    restart: unless-stopped  # This matches the Chatwoot config's restart policy
