@@ -1,10 +1,19 @@
+# Base dependencies with fixed versions
 gunicorn==20.1.0
-label-studio-ml @ git+https://github.com/HumanSignal/label-studio-ml-backend.git
-Jinja2>=3.1.2
-itsdangerous>=2.1.2
+Jinja2==3.1.2
+itsdangerous==2.1.2
 rq==1.10.1
-pillow
-tensorflow
-tensorflow_hub
-werkzeug>=2.3.0
-# pip install --force-reinstall -v "tensorflow==1.15.5"
+werkzeug==3.0.1
+Flask==2.3.3
+
+# Explicitly specify pydantic version
+pydantic>=2.4.2,<3.0.0
+
+# Machine learning dependencies
+pillow==10.0.0
+tensorflow==2.13.1
+tensorflow_hub==0.15.0
+
+# Label Studio dependencies - install after pydantic
+label-studio-sdk @ git+https://github.com/HumanSignal/label-studio-sdk.git
+label-studio-ml @ git+https://github.com/HumanSignal/label-studio-ml-backend.git
