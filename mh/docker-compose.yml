@@ -5,11 +5,14 @@ services:
     container_name: ml-backend
     image: humansignal/ml-backend:v0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090"]  # The ML backend returns 200 OK on root path
-      interval: 30s
-      timeout: 10s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - 'http://127.0.0.1:9090/health'
+      interval: 5s
+      timeout: 20s
       retries: 10
-      start_period: 40s
     build: .
     environment:
       - MODEL_DIR=/data/models
