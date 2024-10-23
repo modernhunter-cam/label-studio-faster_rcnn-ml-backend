@@ -34,55 +34,11 @@ class NewModel(LabelStudioMLBase):
             logger.error(f'Error getting image dimensions: {str(e)}')
             raise
 
-    def _process_detection_results(self, detection_result, img_width, img_height):
-        """Process detection results into Label Studio format"""
-        results = []
-        all_scores = []
-        
-        try:
-            for item in detection_result:
-                bbox = item.get("bboxPercent", [])
-                if len(bbox) < 4:
-                    logger.warning(f'Invalid bbox format: {bbox}')
-                    continue
-                    
-                x, y, xmax, ymax = bbox[:4]
-                score = item.get("score", 0)
-                output_label = item.get("class", "unknown")
-                
-                results.append({
-                    'from_name': 'label',
-                    'to_name': 'image',
-                    'type': 'rectanglelabels',
-                    'original_width': img_width,
-                    'original_height': img_height,
-                    'image_rotation': 0,
-                    'value': {
-                        'rotation': 0,
-                        'rectanglelabels': [output_label],
-                        'x': x,
-                        'y': y,
-                        'width': xmax,
-                        'height': ymax
-                    },
-                    'score': score
-                })
-                all_scores.append(score)
-                
-            avg_score = sum(all_scores) / max(len(all_scores), 1)
-            return [{
-                'result': results,
-                'score': avg_score
-            }]
-        except Exception as e:
-            logger.error(f'Error processing detection results: {str(e)}')
-            raise
-
     def predict(self, tasks, context=None, **kwargs):
         """Make predictions for the given tasks"""
         if not tasks:
             logger.warning('No tasks provided for prediction')
-            return []
+            return [{"results": []}]
 
         try:
             # Get image URL and dimensions
@@ -90,48 +46,98 @@ class NewModel(LabelStudioMLBase):
             image_path = task.get('data', {}).get('image')
             if not image_path:
                 logger.error('No image path found in task data')
-                return []
+                return [{"results": []}]
                 
             image_url = f'{self.label_studio_base_url}{image_path}'
-            logger.debug(f'Processing image: {image_url}')
+            logger.info(f'Processing image: {image_url}')
             
             # Get image dimensions
             img_width, img_height = self._get_image_dimensions(image_url)
+            logger.debug(f'Image dimensions: {img_width}x{img_height}')
             
             # Make prediction request
+            logger.debug(f'Sending request to ML server: {self.ml_server_url}')
             response = requests.post(
                 self.ml_server_url,
                 json={'img': image_url},
                 timeout=30
             )
-            response.raise_for_status()
             
-            # Check for empty response
-            if not response.content:
-                logger.warning('Empty response from ML server')
-                return []
-                
-            # Parse response
+            # Log the raw response for debugging
+            logger.debug(f'ML server status code: {response.status_code}')
+            logger.debug(f'ML server response headers: {response.headers}')
+            logger.debug(f'ML server raw response: {response.text}')
+            
+            # Handle non-200 responses
+            if response.status_code != 200:
+                logger.error(f'ML server returned status code {response.status_code}')
+                return [{"results": []}]
+            
+            # Try to parse the response
             try:
                 detection_result = response.json()
-                logger.debug(f'Detection result: {detection_result}')
+                logger.debug(f'Parsed detection result: {detection_result}')
+                
+                # If we get an empty result or error message
+                if not detection_result or 'error' in detection_result:
+                    logger.warning(f'Empty or error result from ML server: {detection_result}')
+                    return [{"results": []}]
+                
+                # Process valid results
+                results = []
+                all_scores = []
+                
+                for item in detection_result:
+                    bbox = item.get("bboxPercent", [])
+                    if len(bbox) < 4:
+                        logger.warning(f'Invalid bbox format: {bbox}')
+                        continue
+                        
+                    x, y, xmax, ymax = bbox[:4]
+                    score = item.get("score", 0)
+                    output_label = item.get("class", "unknown")
+                    
+                    results.append({
+                        'from_name': 'label',
+                        'to_name': 'image',
+                        'type': 'rectanglelabels',
+                        'original_width': img_width,
+                        'original_height': img_height,
+                        'image_rotation': 0,
+                        'value': {
+                            'rotation': 0,
+                            'rectanglelabels': [output_label],
+                            'x': x,
+                            'y': y,
+                            'width': xmax,
+                            'height': ymax
+                        },
+                        'score': score
+                    })
+                    all_scores.append(score)
+                
+                if results:
+                    avg_score = sum(all_scores) / len(all_scores)
+                    return [{
+                        'result': results,
+                        'score': avg_score
+                    }]
+                else:
+                    return [{"results": []}]
+                    
             except requests.exceptions.JSONDecodeError as e:
                 logger.error(f'Failed to decode JSON response: {str(e)}')
-                logger.error(f'Raw response: {response.text}')
-                return []
+                logger.error(f'Raw response text: {response.text}')
+                return [{"results": []}]
                 
-            # Process results
-            return self._process_detection_results(detection_result, img_width, img_height)
-            
         except requests.exceptions.RequestException as e:
             logger.error(f'Request error: {str(e)}')
-            return []
+            return [{"results": []}]
         except Exception as e:
             logger.error(f'Unexpected error in predict: {str(e)}')
-            return []
+            return [{"results": []}]
 
     def fit(self, event, data, **kwargs):
         """Handle annotation events"""
         logger.debug(f'Fit called with event: {event}')
-        # Add training logic here if needed
         pass
