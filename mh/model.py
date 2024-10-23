@@ -104,21 +104,21 @@ class NewModel(LabelStudioMLBase):
                     output_label = item.get("class", "unknown")
                     
                     result = {
-                        'from_name': 'label',
-                        'to_name': 'image',
+                        'from_name': 'label',  # Adjust if needed
+                        'to_name': 'image',  # Adjust if needed
                         'type': 'rectanglelabels',
                         'original_width': img_width,
                         'original_height': img_height,
                         'image_rotation': 0,
                         'value': {
-                            'rotation': 0,
+                            'rotation': 0,  # Adjust if needed
                             'rectanglelabels': [output_label],
                             'x': x,
                             'y': y,
-                            'width': width - x,  # Convert to width
-                            'height': height - y  # Convert to height
+                            'width': xmax,
+                            'height': ymax
                         },
-                        'score': score / 100  # Convert score to 0-1 range
+                        'score': score
                     }
                     results.append(result)
                     all_scores.append(score / 100)
@@ -127,7 +127,7 @@ class NewModel(LabelStudioMLBase):
                     continue
             
             if results:
-                avg_score = sum(all_scores) / len(all_scores)
+                avg_score =sum(all_scores) / max(len(all_scores), 1)
                 return [{
                     'result': results,
                     'score': avg_score
