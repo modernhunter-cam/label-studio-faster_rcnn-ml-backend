@@ -1,81 +1,137 @@
 import logging
 from io import BytesIO
-
 import requests
 from PIL import Image
-
 from label_studio_ml.model import LabelStudioMLBase
-from label_studio_ml.utils import get_image_size, \
-    get_single_tag_keys, DATA_UNDEFINED_NAME
+from label_studio_ml.utils import get_image_size, get_single_tag_keys, DATA_UNDEFINED_NAME
 
 logger = logging.getLogger(__name__)
 
-
 class NewModel(LabelStudioMLBase):
-
     def __init__(self, project_id, **kwargs):
         super(NewModel, self).__init__(**kwargs)
-        print(f'__init__ My Class')
-        test = self.get('parsed_label_config')
-        print(f'parsed_label_config {test}')
+        logger.info('Initializing NewModel')
+        parsed_config = self.get('parsed_label_config')
+        logger.debug(f'Parsed label config: {parsed_config}')
+        
+        # Store API configurations
+        self.label_studio_auth = 'Token bd09a8fe874cfaf2e7a884dca7cf431fac06e6e4'
+        self.label_studio_base_url = 'https://labelstudio.server01.mhcam.app'
+        self.ml_server_url = 'https://ml.server01.mhcam.app/detector'
 
-    def predict(self, tasks, context=None, **kwargs):
-        task = tasks[0]
-        image_url = 'https://labelstudio.server01.mhcam.app' + task['data']['image']
-        img_width, img_height = Image.open(BytesIO(requests.get(image_url, headers={
-            'Authorization': 'Token bd09a8fe874cfaf2e7a884dca7cf431fac06e6e4'
-        }).content)).size
-        body = {'img': image_url}
-        print(f'predict My Class {body}')
-        data = requests.post('https://ml.server01.mhcam.app/detector', json=body)
-        result = data.json()
-        # [{'bbox': [37.40971565246582, 427.66900062561035, 300.0874614715576, 422.4660015106201], 'class': 'horse', 'score': 0.9951158761978149}]
-        print(f'predict My Class {data.json()}')
+    def _get_image_dimensions(self, image_url):
+        """Helper method to get image dimensions safely"""
+        try:
+            response = requests.get(
+                image_url, 
+                headers={'Authorization': self.label_studio_auth},
+                timeout=10
+            )
+            response.raise_for_status()
+            img = Image.open(BytesIO(response.content))
+            return img.size
+        except Exception as e:
+            logger.error(f'Error getting image dimensions: {str(e)}')
+            raise
+
+    def _process_detection_results(self, detection_result, img_width, img_height):
+        """Process detection results into Label Studio format"""
         results = []
         all_scores = []
-        for item in result:
-            bbox = item["bboxPercent"]
-            output_label = item["class"]
+        
+        try:
+            for item in detection_result:
+                bbox = item.get("bboxPercent", [])
+                if len(bbox) < 4:
+                    logger.warning(f'Invalid bbox format: {bbox}')
+                    continue
+                    
+                x, y, xmax, ymax = bbox[:4]
+                score = item.get("score", 0)
+                output_label = item.get("class", "unknown")
+                
+                results.append({
+                    'from_name': 'label',
+                    'to_name': 'image',
+                    'type': 'rectanglelabels',
+                    'original_width': img_width,
+                    'original_height': img_height,
+                    'image_rotation': 0,
+                    'value': {
+                        'rotation': 0,
+                        'rectanglelabels': [output_label],
+                        'x': x,
+                        'y': y,
+                        'width': xmax,
+                        'height': ymax
+                    },
+                    'score': score
+                })
+                all_scores.append(score)
+                
+            avg_score = sum(all_scores) / max(len(all_scores), 1)
+            return [{
+                'result': results,
+                'score': avg_score
+            }]
+        except Exception as e:
+            logger.error(f'Error processing detection results: {str(e)}')
+            raise
 
-            x, y, xmax, ymax = bbox[:4]
-            score = item["score"]
+    def predict(self, tasks, context=None, **kwargs):
+        """Make predictions for the given tasks"""
+        if not tasks:
+            logger.warning('No tasks provided for prediction')
+            return []
 
-            results.append({
-                'from_name': 'label',  # Adjust if needed
-                'to_name': 'image',  # Adjust if needed
-                'type': 'rectanglelabels',
-                'original_width': img_width,
-                'original_height': img_height,
-                'image_rotation': 0,
-                'value': {
-                    'rotation': 0,  # Adjust if needed
-                    'rectanglelabels': [output_label],
-                    'x': x,
-                    'y': y,
-                    'width': xmax,
-                    'height': ymax
-                },
-                'score': score
-            })
-            all_scores.append(score)
-
-        avg_score = sum(all_scores) / max(len(all_scores), 1)
-        final_result = [{
-            'result': results,
-            'score': avg_score
-        }]
-        print(f'predict My Class {final_result}')
-        return final_result
+        try:
+            # Get image URL and dimensions
+            task = tasks[0]
+            image_path = task.get('data', {}).get('image')
+            if not image_path:
+                logger.error('No image path found in task data')
+                return []
+                
+            image_url = f'{self.label_studio_base_url}{image_path}'
+            logger.debug(f'Processing image: {image_url}')
+            
+            # Get image dimensions
+            img_width, img_height = self._get_image_dimensions(image_url)
+            
+            # Make prediction request
+            response = requests.post(
+                self.ml_server_url,
+                json={'img': image_url},
+                timeout=30
+            )
+            response.raise_for_status()
+            
+            # Check for empty response
+            if not response.content:
+                logger.warning('Empty response from ML server')
+                return []
+                
+            # Parse response
+            try:
+                detection_result = response.json()
+                logger.debug(f'Detection result: {detection_result}')
+            except requests.exceptions.JSONDecodeError as e:
+                logger.error(f'Failed to decode JSON response: {str(e)}')
+                logger.error(f'Raw response: {response.text}')
+                return []
+                
+            # Process results
+            return self._process_detection_results(detection_result, img_width, img_height)
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f'Request error: {str(e)}')
+            return []
+        except Exception as e:
+            logger.error(f'Unexpected error in predict: {str(e)}')
+            return []
 
     def fit(self, event, data, **kwargs):
-        """
-        This method is called each time an annotation is created or updated
-        You can run your logic here to update the model and persist it to the cache
-        It is not recommended to perform long-running operations here, as it will block the main thread
-        Instead, consider running a separate process or a thread (like RQ worker) to perform the training
-        :param event: event type can be ('ANNOTATION_CREATED', 'ANNOTATION_UPDATED')
-        :param data: the payload received from the event (check [Webhook event reference](https://labelstud.io/guide/webhook_reference.html))
-        """
-
-        # Add your fit logic here
+        """Handle annotation events"""
+        logger.debug(f'Fit called with event: {event}')
+        # Add training logic here if needed
         pass
